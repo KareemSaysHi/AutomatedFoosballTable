@@ -5,6 +5,7 @@ import sys
 import imutils
 import numpy as np
 from centroidtracker import CentroidTracker
+from onnxhelper import OnnxHelper
 
 class AutomatedFoosballTable():
     
@@ -36,6 +37,7 @@ class AutomatedFoosballTable():
 
         corners = arucos[1]
         ids = arucos[2]
+
         pTrans = cvmethods.findPerspectiveTransform(frame, corners, ids)
         
         self.transParams = list(pTrans)
@@ -91,25 +93,35 @@ class AutomatedFoosballTable():
         sortedRodPoints = ([rodPoints[ySortArray[i]] for i in range (0, len(ySortArray))]) #sorted by y value
 
         self.ct = CentroidTracker()
+        self.oh = OnnxHelper()
         for i in range (0, len(sortedRodPoints)):
             self.ct.register(sortedRodPoints[i], i) #register point with id i (increasing order in y)
 
-        #TESTING LOOP:
 
+    def main(self):
         while True:
             frame = self.newFrame()
             rodPoints = cvmethods.getRodPoints(frame)
             objects = self.ct.update(rodPoints)
 
-            for (objectId, centroid) in objects.items():
+            for (objectId, centroid) in objects.items(): #just for visualization
                 text = "ID {}".format(objectId)
                 cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.imshow("frame", frame)
+
+            self.posList = []
+            for (objectId, centroid) in objects.items():
+                self.posList.append[centroid[0]/frame.shape[1]] #0 for the x value, normalize it
+
+
+ 
+
+            
 
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 break
-
 
     def newFrame(self):
         ret, frame = self.cap.read()
@@ -123,4 +135,5 @@ class AutomatedFoosballTable():
 
 if __name__ == "__main__":
     AFT = AutomatedFoosballTable()
+    AFT.main()
     
