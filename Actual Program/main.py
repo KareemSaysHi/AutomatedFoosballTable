@@ -10,6 +10,16 @@ from onnxhelper import OnnxHelper
 class AutomatedFoosballTable():
     
     def __init__(self):
+        #define some standard values:
+        self.isPlaying = False
+        self.rodPos = [0, 0, 0, 0, 0, 0]
+        self.rodRot = [None, 0, None, 0, None, 0]
+        self.ballPos = 0
+        self.noBallCounter = 0
+
+        self.ct = CentroidTracker()
+        self.oh = OnnxHelper()
+
         try:
             self.cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
         except:
@@ -57,6 +67,7 @@ class AutomatedFoosballTable():
         cv2.destroyAllWindows()
 
         #check ball tracking until continue
+
         print("looking for rods")
         while True:
             frame = self.newFrame()
@@ -109,36 +120,49 @@ class AutomatedFoosballTable():
         ySortArray = np.argsort(yArray)
         sortedRodPoints = ([rodPoints[ySortArray[i]] for i in range (0, len(ySortArray))]) #sorted by y value
 
-        self.ct = CentroidTracker()
-        self.oh = OnnxHelper()
         for i in range (0, len(sortedRodPoints)):
             self.ct.register(sortedRodPoints[i], i) #register point with id i (increasing order in y)
 
 
     def main(self):
         while True:
-            frame = self.newFrame()
-            rodPoints = cvmethods.getRodPoints(frame)
-            objects = self.ct.update(rodPoints)
+            frame = self.newFrame() #make a new frame
 
-            for (objectId, centroid) in objects.items(): #just for visualization
-                text = "ID {}".format(objectId)
-                cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.imshow("frame", frame)
+            ball, center = cvmethods.getBallPos(frame) #get ball data
+            if center == None:  #if it doesn't see the ball, power off
+                self.noBallCounter += 1 #ball pos doesn't update if ball not found
+                if self.noBallCounter > 200:
+                    self.isPlaying = False
+            else: 
+                self.ballPos = center
+                self.noBallCounter = 0
+                self.isPlaying = True
 
-            #self.posList = []
-            #for (objectId, centroid) in objects.items():
-            #   self.posList.append[centroid[0]/frame.shape[1]] #0 for the x value, normalize it
+            if self.isPlaying: #everything else is contained in this if statement
+                
+                rodPoints = cvmethods.getRodPoints(frame) #get rod data
+                objects = self.ct.update(rodPoints) #and update
 
+                for i in range(0, len(objects.items())): #each item is (objectId, centroid)
+                                self.rodPos.append[objects.items[i][0]/frame.shape[1]] #0 for the x value, normalize it
 
- 
+                for (objectId, centroid) in objects.items(): #just for visualization
+                    text = "ID {}".format(objectId)
+                    cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-            
+                ohParams = self.oh.setInputs(self.ballPos, self.rodPos, self.rodRot)
+                ohResults = self.oh.runOnnx(ohParams)
+                #oh to unity
 
-            cv2.imshow("frame", frame)
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord("q"):
-                break
+                #UPDATE ROTATION HERE???
+    
+
+                
+
+                cv2.imshow("frame", frame)
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord("q"):
+                    break
 
     def newFrame(self):
         ret, frame = self.cap.read()
