@@ -71,15 +71,16 @@ def transformPerspective(frame, perspective, maxWidth, maxHeight):
     return warped
     
 def getRodPoints(frame):
-    pinkLower = (80, 10, 100)
+    pinkLower = (80, 10, 130)
     pinkUpper = (180, 120, 200)
 
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     cv2.imshow("blurred", blurred)
 
     mask = cv2.inRange(blurred, pinkLower, pinkUpper)
-    mask = cv2.erode(mask, None, iterations=20)
-    mask = cv2.dilate(mask, None, iterations=20)
+    cv2.imshow("maskedbeforeerode", mask)
+    mask = cv2.erode(mask, None, iterations=10)
+    mask = cv2.dilate(mask, None, iterations=10)
     cv2.imshow("masked", mask)
 
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
@@ -91,7 +92,7 @@ def getRodPoints(frame):
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
     counter = 0
     if len(cnts) > 0:
-        while counter < min(len(cnts), 4):
+        while counter < min(len(cnts), 2): #CHANGE THIS NUMBER FROM 2 TO WHATEVER ELSE
             c = cnts[counter]
             ((x, y), radius) = cv2.minEnclosingCircle(c)
             M = cv2.moments(c)
@@ -105,9 +106,9 @@ def getRodPoints(frame):
     
     return pts
 
-def getBallPos():
-    orangeLower = (70, 130, 200)
-    orangeUpper = (110, 160, 255)
+def getBallPos(frame):
+    orangeLower = (60, 120, 180)
+    orangeUpper = (150, 180, 255)
 
     while True:
         
@@ -117,8 +118,8 @@ def getBallPos():
         cv2.imshow("blurred", blurred)
 
         mask = cv2.inRange(blurred, orangeLower, orangeUpper)
-        mask = cv2.erode(mask, None, iterations=2)
-        mask = cv2.dilate(mask, None, iterations=2)
+        #mask = cv2.erode(mask, None, iterations=1)
+        mask = cv2.dilate(mask, None, iterations=5)
         cv2.imshow("masked", mask)
 
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
@@ -135,4 +136,4 @@ def getBallPos():
             if radius > 10:
                 cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
         
-        return center
+        return frame, center

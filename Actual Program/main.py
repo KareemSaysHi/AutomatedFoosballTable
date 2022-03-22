@@ -14,12 +14,13 @@ class AutomatedFoosballTable():
             self.cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
         except:
             self.cap = cv2.VideoCapture(0)
-            
+        #self.cap.set(3, 1920)
+        #self.cap.set(4, 1080)
+
         #Look for four aruco tags
 
         while True: 
             ret, frame = self.cap.read()
-            frame = imutils.resize(frame, width=600)
             arucos = cvmethods.findAruco(frame)
             cv2.imshow("aruco", frame)
             if arucos[3] == True: #if four have been found
@@ -55,6 +56,22 @@ class AutomatedFoosballTable():
 
         cv2.destroyAllWindows()
 
+        #check ball tracking until continue
+        print("looking for rods")
+        while True:
+            frame = self.newFrame()
+            frame = imutils.resize(frame, width=300)
+            ball, center = cvmethods.getBallPos(frame)
+            cv2.imshow("ball tracking", ball)
+            if cv2.waitKey(1) & 0xFF == ord('q'):  
+                self.end()
+                sys.exit("Manually exited the program")
+            elif cv2.waitKey(1) & 0xFF == ord('c'):  
+                break
+            time.sleep(0.02)
+
+        cv2.destroyAllWindows()
+
         #Initialize rod positions
 
         #Find two rods
@@ -62,6 +79,7 @@ class AutomatedFoosballTable():
         counter = 0
         while True:
             frame = self.newFrame()
+            frame = imutils.resize(frame, width=300)
             rodPoints = cvmethods.getRodPoints(frame)
             cv2.imshow("frame", frame)
 
@@ -69,7 +87,6 @@ class AutomatedFoosballTable():
             print(counter)
 
             if len(rodPoints) == 2: #we found both rods
-                print("we in here")
                 counter = counter + 1
             else:
                 counter = 0
@@ -109,9 +126,9 @@ class AutomatedFoosballTable():
                 cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.imshow("frame", frame)
 
-            self.posList = []
-            for (objectId, centroid) in objects.items():
-                self.posList.append[centroid[0]/frame.shape[1]] #0 for the x value, normalize it
+            #self.posList = []
+            #for (objectId, centroid) in objects.items():
+            #   self.posList.append[centroid[0]/frame.shape[1]] #0 for the x value, normalize it
 
 
  

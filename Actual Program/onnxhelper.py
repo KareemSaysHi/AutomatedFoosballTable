@@ -12,14 +12,17 @@ class OnnxHelper():
         self.maxAcceleration = 3
         self.foosLinearVelocity = 0
         self.fixedDeltaTime = 0.02
+        self.unityZScalar = 4.25
 
-    def setInputs(ballPos, rodPosArray):
-        toBall = np.array([ballPos[1] - rodPosArray[1][1], 0, ballPos[0] - rodPosArray[1][0]])
+    def setInputs(self, ballPos, rodPosArray, rodRotArray):
+        toBall = np.array([(ballPos[1] - rodPosArray[1][1])*self.unityZScalar, 0, (ballPos[0] - rodPosArray[1][0]*self.unityZScalar)])
         #A few things to note: rodPosArray[1] refers to 2nd closest to top of frame (id 1)
         #Unity's system is [our height, 0, our width] or [y, 0, x]
         toBallMagnitude = np.linalg.norm(toBall)
         toBallNormalized = toBall/toBallMagnitude
         
+        agentPlayerPos = rodPosArray[1]*self.unityZScalar
+        agentRotPos = rodRotArray[1]
         #to ball.normalized (3)
         #to ball.magnitude (1)
         #agent.position (1)
