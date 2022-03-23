@@ -53,7 +53,7 @@ class OnnxHelper():
 
         return outputs #This is going to return the output weights, check unity for the rest of the translation
 
-    def rawOutputToUnity(self, rodPosArray, rodRotArray, outputArray): #currently only for one rod
+    def rawOutputToVel(self, rodPosArray, rodRotArray, outputArray): #currently only for one rod
             linearInput = self.velocityScalar * outputArray[0]
             rotaryInput = self.angularVelocityScalar * outputArray[1]
 
@@ -90,4 +90,16 @@ class OnnxHelper():
                 newRodRotArray[1] = 360-1*self.maxPosition #think about this more later
                 self.foosLinearVelocity = 0
 
-            return "return something!"
+            return self.foosLinearVelocity, self.foosAngularVelocity
+
+    def velToSteps(self, lin, rot):
+        #to change speed to steps:
+        linSteps = int(lin / 6.28 * 200 * self.fixedDeltaTime) #divide by circumference, multiply by steps, times deltaTime
+        rotSteps = int(rot * 200 / 360 * self.fixedDeltaTime) #multiply by steps, divided by degrees, times deltaTime
+
+        return linSteps, rotSteps
+
+    def stepsToRot(self, steps):
+        #to change speed to steps:
+        rot = int(steps / 200 * 360)
+        return rot

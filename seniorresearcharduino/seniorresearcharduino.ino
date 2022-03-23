@@ -12,8 +12,9 @@ int stepperPins[3][2][4] = {{{2, 3, 4, 5}, {6, 7, 8, 9}},
 bool stringComplete = false;
 float pwmSpeed = 10; //in milliseconds
 int stepperCounter[3][2] = {{10000, 10000}, {10000, 10000}, {10000, 10000}};
+int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}}
 String inputString = "";
-String delimiter = ","
+String delimiter = ",";
 
 float lastStepMillis = 0;
 float deltaTime = 0.002;
@@ -21,9 +22,10 @@ float deltaTime = 0.002;
 int specialNumber = 123456789;
 int linSteps = 0;
 int rotSteps = 0;
+int writeCounter = 0;
 int counter = 0;
 int rotCheckLim = 100;
-
+int pos;
 
 void setup() {
   Serial.begin(250000);
@@ -35,40 +37,27 @@ void loop() {
   if (Serial.available() > 0) serialEvent();
 
   unsigned long currentMillis = millis();
-
-  MoveSteppers();
   
   if (stringComplete) {
-    int linIndex = inputString.indexOf(",");   //put in x and y vals
-    float lin = (inputString.substring(1, linIndex)).toFloat();
-    inputString.erase(0, s.find(delimiter, 
+    int writeCounter = 0;
+    while((pos = inputString.indexOf(delimiter)) != -1) { //going to be of form val, val, val, ... , val,
+      stepperCounter[writeCounter/2][writeCounter%2] = inputString.substring(0, pos).toFloat();
+      inputString.remove(0, pos+1);
+      Serial.println(writeCounter);
+      Serial.println(inputString);
+      writeCounter++;
+    }
+
+    MoveSteppers(); //actually move the steppers
     
-    float rot = (inputString.substring(linIndex+1, inputString.length()+1)).toFloat();
-    
-    //Serial.println(lin);
-    //Serial.println(rot);
-
-    UpdateCounters(lin1, rot1, lin2, rot2, lin3, rot3);
-
-    counter++;
-    if (counter > rotCheckLim) {
-      /*char rotToSend[];
-      for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 2; h++) {
-          int len = to_string(stepperCounter[i][j][1]).length();
-          char* nchar = new char[len];
-          numberChar = to_chars(nchar, nchar+len, number);
-          strcat(rotToSend, numberChar)
-          strcat(rotToSend, ';')
-        }
-        Serial.write(stepperCounter[i][j][1]) //writes all 8
-      }*/
-
+    counter++; 
+    if (counter > rotCheckLim) { //basically a short clock
+      
       //less complicated
-      Serial.write(specialNumber);
       for (int i = 0; i < 3; i++) {
-        Serial.write(stepperCounter[i][1]); //writes all 8 on different lines
+        Serial.write(stepperPos[i][1]); //writes all 3 on different lines
       }
+      Serial.write(specialNumber);
     }
     
     inputString = "";
@@ -86,49 +75,55 @@ void serialEvent() {
   }
 }
 
-void UpdateCounters(float lin1, float lin2, float lin3, float rot) {
-  //everything needs to be done on the pi to optimize speed
-
-  //to change speed to steps:
-  linSteps = int(lin / 6.28 * 200 * deltaTime); //divide by circumference, multiply by steps, times deltaTime
-  rotSteps = int(rot * 200 / 360 * deltaTime); //multiply by steps, divide by degrees, times deltaTime
-
-  stepperCounter[0] = linSteps;
-  stepperCounter[1] = rotSteps;
-}
-
 void MoveSteppers() {
   for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 2, j++) {      
-        if (stepperCounter[i][j] != 0) {
-          //Serial.println(millis());
-          if (stepperCounter[i][j] % 4 == 1) {
-            digitalWrite(stepperPins[i][j][0], HIGH); //HIGH
-            digitalWrite(stepperPins[i][j][1], LOW);
-            digitalWrite(stepperPins[i][j][2], LOW);
-            digitalWrite(stepperPins[i][j][3], LOW);
-          } else if (stepperCounter[i][j] % 4 == 2) {
-            digitalWrite(stepperPins[i][j][0], LOW);
-            digitalWrite(stepperPins[i][j][1], HIGH); //HIGH
-            digitalWrite(stepperPins[i][j][2], LOW);
-            digitalWrite(stepperPins[i][j][3], LOW);
-          } else if (stepperCounter[i][j] % 4 == 3) {
-            digitalWrite(stepperPins[i][j][0], LOW);
-            digitalWrite(stepperPins[i][j][1], LOW);
-            digitalWrite(stepperPins[i][j][2], HIGH); //HIGH
-            digitalWrite(stepperPins[i][j][3], LOW);
-          } else {
-            digitalWrite(stepperPins[i][j][0], LOW);
-            digitalWrite(stepperPins[i][j][1], LOW);
-            digitalWrite(stepperPins[i][j][2], LOW);
-            digitalWrite(stepperPins[i][j][3], HIGH); //HIGH
-          }      
-          if (stepperCounter[i] < 0) stepperCounter[i]++;
-          if (stepperCounter[i] > 0) stepperCounter[i]--;
+    for (int j = 0; j < 2; j++) {      
+      if (stepperCounter[i][j] != 0) {
+        //Serial.println(millis());
+        if (stepperCounter[i][j] % 4 == 1) {
+          digitalWrite(stepperPins[i][j][0], HIGH); //HIGH
+          digitalWrite(stepperPins[i][j][1], LOW);
+          digitalWrite(stepperPins[i][j][2], LOW);
+          digitalWrite(stepperPins[i][j][3], LOW);
+        } else if (stepperCounter[i][j] % 4 == 2) {
+          digitalWrite(stepperPins[i][j][0], LOW);
+          digitalWrite(stepperPins[i][j][1], HIGH); //HIGH
+          digitalWrite(stepperPins[i][j][2], LOW);
+          digitalWrite(stepperPins[i][j][3], LOW);
+        } else if (stepperCounter[i][j] % 4 == 3) {
+          digitalWrite(stepperPins[i][j][0], LOW);
+          digitalWrite(stepperPins[i][j][1], LOW);
+          digitalWrite(stepperPins[i][j][2], HIGH); //HIGH
+          digitalWrite(stepperPins[i][j][3], LOW);
         } else {
-            Serial.println(millis());
+          digitalWrite(stepperPins[i][j][0], LOW);
+          digitalWrite(stepperPins[i][j][1], LOW);
+          digitalWrite(stepperPins[i][j][2], LOW);
+          digitalWrite(stepperPins[i][j][3], HIGH); //HIGH
+        }      
+        if (stepperCounter[i][j] < 0) {
+          stepperCounter[i][j]++;
+          stepperPos[i][j]--;
         }
-      
+        if (stepperCounter[i][j] > 0) {
+          stepperCounter[i][j]--;
+          stepperPos[i][j]++;
+        }
+      }      
     }
   }
 }
+
+
+//overly complicated, don't use unless necessary
+/*char rotToSend[];
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; h++) {
+          int len = to_string(stepperCounter[i][j][1]).length();
+          char* nchar = new char[len];
+          numberChar = to_chars(nchar, nchar+len, number);
+          strcat(rotToSend, numberChar)
+          strcat(rotToSend, ';')
+        }
+        Serial.write(stepperCounter[i][j][1]) //writes all 8
+      }*/

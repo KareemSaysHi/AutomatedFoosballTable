@@ -6,10 +6,16 @@ import imutils
 import numpy as np
 from centroidtracker import CentroidTracker
 from onnxhelper import OnnxHelper
+import serial
 
 class AutomatedFoosballTable():
     
     def __init__(self):
+
+        #open serial
+        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=5) 
+        self.specialNumber = 123456789
+
         #define some standard values:
         self.isPlaying = False
         self.rodPos = [0, 0, 0, 0, 0, 0]
@@ -19,6 +25,9 @@ class AutomatedFoosballTable():
 
         self.ct = CentroidTracker()
         self.oh = OnnxHelper()
+
+        self.totalStepCounter = 0
+        self.readRotCounterLim = 100
 
         try:
             self.cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
@@ -126,6 +135,8 @@ class AutomatedFoosballTable():
 
     def main(self):
         while True:
+            self.totalStepCounter += 1 #update counters
+
             frame = self.newFrame() #make a new frame
 
             ball, center = cvmethods.getBallPos(frame) #get ball data
@@ -143,21 +154,30 @@ class AutomatedFoosballTable():
                 rodPoints = cvmethods.getRodPoints(frame) #get rod data
                 objects = self.ct.update(rodPoints) #and update
 
+                self.rodPos = []
                 for i in range(0, len(objects.items())): #each item is (objectId, centroid)
-                                self.rodPos.append[objects.items[i][0]/frame.shape[1]] #0 for the x value, normalize it
+                    self.rodPos.append[objects.items[i][0]/frame.shape[1]] #0 for the x value, normalize it
 
                 for (objectId, centroid) in objects.items(): #just for visualization
                     text = "ID {}".format(objectId)
                     cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                ohParams = self.oh.setInputs(self.ballPos, self.rodPos, self.rodRot)
-                ohResults = self.oh.runOnnx(ohParams)
-                #oh to unity
+                ohParams = self.oh.setInputs(self.ballPos, self.rodPos, self.rodRot) #set inputs for onnx
+                ohResults = self.oh.runOnnx(ohParams) #run onnx
+                velPos, velRot = self.oh.rawOutputToVel(self.rodPos, self.rodRot, ohResults) #get velocities
+                linSteps, rotSteps = self.oh.velToSteps(velPos, velRot) #convert to steps
+                sendStr = str(linSteps) + "," + str(rotSteps) + ",0,0,0,0,\n" #format
+                sendStr = bytes(sendStr, 'utf-8')
+                self.ser.write(sendStr) #send to arduino
 
-                #UPDATE ROTATION HERE???
-    
-
-                
+                if self.totalStepCounter % self.readRotCounterLim == 0: #check if we need to update rotation values
+                    if self.ser.in_waiting: #see if serial has stuff in it
+                        serLine = int(self.ser.readline().strip('\n')) #format the line
+                        if serLine == self.specialNumber: #see if we have terminating number
+                            rodMaskArray = [1, 3, 5] 
+                            for i in range(0, 3):
+                                serLine = int(self.ser.readline().strip('\n'))
+                                self.rodRot[rodMaskArray[i]] = self.oh.stepsToRot(serLine) #update the changes
 
                 cv2.imshow("frame", frame)
                 key = cv2.waitKey(1) & 0xFF
