@@ -71,16 +71,24 @@ def transformPerspective(frame, perspective, maxWidth, maxHeight):
     return warped
     
 def getRodPoints(frame):
-    pinkLower = (80, 10, 130)
-    pinkUpper = (180, 120, 200)
+    #pinkLower = (100, 50, 180)
+    #pinkUpper = (250, 200, 250)
 
-    blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+    pinkLower = (130, 50, 50)
+    pinkUpper = (170, 255, 255)
+
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    blurred=frame
+    #blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     cv2.imshow("blurred", blurred)
+
+    frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
+
 
     mask = cv2.inRange(blurred, pinkLower, pinkUpper)
     cv2.imshow("maskedbeforeerode", mask)
-    mask = cv2.erode(mask, None, iterations=10)
-    mask = cv2.dilate(mask, None, iterations=10)
+    mask = cv2.erode(mask, None, iterations=3)
+    mask = cv2.dilate(mask, None, iterations=3)
     cv2.imshow("masked", mask)
 
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
@@ -95,6 +103,7 @@ def getRodPoints(frame):
         while counter < min(len(cnts), 2): #CHANGE THIS NUMBER FROM 2 TO WHATEVER ELSE
             c = cnts[counter]
             ((x, y), radius) = cv2.minEnclosingCircle(c)
+
             M = cv2.moments(c)
             center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
@@ -104,18 +113,21 @@ def getRodPoints(frame):
             
             counter = counter+1
     
-    return pts
+    return pts, frame
 
 def getBallPos(frame):
-    orangeLower = (60, 120, 180)
-    orangeUpper = (150, 180, 255)
+    orangeLower = (10, 100, 100)
+    orangeUpper = (30, 255, 255)
 
     while True:
         
-        frame = imutils.resize(frame, width=600)
+        #frame = imutils.resize(frame, width=600)
+        #note - this is taken care of in main.py
 
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         cv2.imshow("blurred", blurred)
+
+        blurred = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
         mask = cv2.inRange(blurred, orangeLower, orangeUpper)
         #mask = cv2.erode(mask, None, iterations=1)

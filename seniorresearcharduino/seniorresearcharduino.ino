@@ -12,52 +12,71 @@ int stepperPins[3][2][4] = {{{2, 3, 4, 5}, {6, 7, 8, 9}},
 bool stringComplete = false;
 float pwmSpeed = 10; //in milliseconds
 int stepperCounter[3][2] = {{10000, 10000}, {10000, 10000}, {10000, 10000}};
-int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}}
+int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 String inputString = "";
 String delimiter = ",";
 
 float lastStepMillis = 0;
-float deltaTime = 0.002;
 
 int specialNumber = 123456789;
 int linSteps = 0;
 int rotSteps = 0;
 int writeCounter = 0;
 int counter = 0;
-int rotCheckLim = 100;
+int rotCheckLim = 5;
 int pos;
 
 void setup() {
   Serial.begin(250000);
   Serial.println("starting");
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {
 
-  if (Serial.available() > 0) serialEvent();
+  if (Serial.available() > 0) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    serialEvent();
+  }
 
   unsigned long currentMillis = millis();
   
   if (stringComplete) {
+    Serial.write("we recieved something!\n");
+    digitalWrite(LED_BUILTIN, HIGH);
     int writeCounter = 0;
     while((pos = inputString.indexOf(delimiter)) != -1) { //going to be of form val, val, val, ... , val,
       stepperCounter[writeCounter/2][writeCounter%2] = inputString.substring(0, pos).toFloat();
       inputString.remove(0, pos+1);
-      Serial.println(writeCounter);
-      Serial.println(inputString);
       writeCounter++;
     }
 
+    //Serial.println("input recieved");
+    //Serial.println(stepperCounter[0][0]);
+    //Serial.println(stepperCounter[0][1]);
+    //Serial.println(stepperCounter[1][0]);
+    //Serial.println(stepperCounter[1][1]);
+    //Serial.println(stepperCounter[2][0]);
+    //Serial.println(stepperCounter[2][1]);
+    //Serial.print("at counter ");
+    //Serial.println(counter);
     MoveSteppers(); //actually move the steppers
     
-    counter++; 
-    if (counter > rotCheckLim) { //basically a short clock
-      
+    counter++;
+    Serial.write(counter);
+    Serial.write('\n');
+    if (counter >= rotCheckLim) { //basically a short clock
+      Serial.println("returning the rotation values");
       //less complicated
       for (int i = 0; i < 3; i++) {
+        Serial.println(stepperPos[i][1]); //writes all 3 on different lines
         Serial.write(stepperPos[i][1]); //writes all 3 on different lines
+        Serial.write('\n');
       }
       Serial.write(specialNumber);
+      Serial.write('\n');
+      Serial.println("returning to normal stuff now");
+      counter = 0;
     }
     
     inputString = "";

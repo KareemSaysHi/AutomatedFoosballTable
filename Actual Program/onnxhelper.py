@@ -18,6 +18,9 @@ class OnnxHelper():
         self.fixedDeltaTime = 0.02
         self.unityZScalar = 4.25
 
+        self.linearInput = 0
+        self.rotaryInput = 0
+
     def correctRodPos(self, rodPosArray):
         pass #this will adjust for the dist of where things are placed
 
@@ -54,43 +57,71 @@ class OnnxHelper():
         return outputs #This is going to return the output weights, check unity for the rest of the translation
 
     def rawOutputToVel(self, rodPosArray, rodRotArray, outputArray): #currently only for one rod
-            linearInput = self.velocityScalar * outputArray[0]
-            rotaryInput = self.angularVelocityScalar * outputArray[1]
+        if (outputArray[0] == 0):
+            self.linearInput -= 1
+        elif (outputArray[0] == 1):
+            self.linearInput += 1
 
-            if (self.foosLinearVelocity - linearInput) > self.maxAcceleration: #slowing down too fast forward or speeding up too fast backwards
-                self.foosLinearVelocity = self.foosLinearVelocity - self.maxAcceleration
-            elif (linearInput - self.foosLinearVelocity) > self.maxAcceleration: #slowing down too fast backward or speeding up too fast forward
-                self.foosLinearVelocity = self.foosLinearVelocity + self.maxAcceleration
-            else:
-                self.foosLinearVelocity = linearInput
+        if (outputArray[1] == 0):
+            self.rotaryInput -= 1
+        elif (outputArray[1] == 1):
+            self.rotaryInput += 1
 
-            #restricting of angular velocity
-            if ((self.foosAngularVelocity - rotaryInput) > self.maxAngularAcceleration): #slowing down too fast forward or speeding up too fast backwards
-                self.foosAngularVelocity = self.foosAngularVelocity - self.maxAngularAcceleration
-            elif ((rotaryInput - self.foosAngularVelocity) > self.maxAngularAcceleration): #slowing down too fast backward or speeding up too fast forward
-                self.foosAngularVelocity = self.foosAngularVelocity + self.maxAngularAcceleration
-            else:
-                self.foosAngularVelocity = rotaryInput
 
-            newRodPosArray = rodPosArray
-            newRodPosArray[1] = rodPosArray[1] + self.foosLinearVelocity * self.fixedDeltaTime
-            if newRodPosArray[1] > self.maxPosition:
-                newRodPosArray[1] = self.maxPosition
-                self.foosLinearVelocity = 0
-            elif newRodPosArray[1] < -1*self.maxPosition:
-                newRodPosArray[1] = -1*self.maxPosition
-                self.foosLinearVelocity = 0
+        if (self.linearInput >= 3):
+            self.linearInput = 3
+            self.foosLinearVelocity = 30
+        elif (self.linearInput == 2):
+            self.foosLinearVelocity = 8
+        elif (self.linearInput == 1):
+            self.foosLinearVelocity = 2
+        elif (self.linearInput == 0):
+            self.foosLinearVelocity = 0
+        elif (self.linearInput == -1):
+            self.foosLinearVelocity = -2
+        elif (self.linearInput == -2):
+            self.foosLinearVelocity = -8
+        else:
+            self.linearInput = -2
+            self.foosLinearVelocity = -30
 
-            newRodRotArray = rodRotArray
-            newRodRotArray[1] = rodRotArray[1] + self.foosAngularVelocity * self.fixedDeltaTime
-            if newRodRotArray[1] > self.maxRotation and newRodRotArray < 180:
-                newRodRotArray[1] = self.maxRotation
-                self.foosAngularVelocity = 0
-            elif newRodRotArray[1] < 360-1*self.maxRotation:
-                newRodRotArray[1] = 360-1*self.maxPosition #think about this more later
-                self.foosLinearVelocity = 0
 
-            return self.foosLinearVelocity, self.foosAngularVelocity
+        if (self.rotaryInput >= 2):
+            self.rotaryInput = 2
+            self.foosAngularVelocity = 450
+        elif (self.rotaryInput == 1):
+            self.foosAngularVelocity = 90
+        elif (self.rotaryInput == 0):
+            self.foosAngularVelocity = 0
+        elif (self.rotaryInput == -1):
+            self.foosAngularVelocity = -90
+        else:
+            self.rotaryInput = -2
+            self.foosAngularVelocity = -450
+    
+        newRodPosArray = rodPosArray
+        newRodPosArray[1] = rodPosArray[1] + self.foosLinearVelocity * self.fixedDeltaTime
+        if newRodPosArray[1] > self.maxPosition:
+            newRodPosArray[1] = self.maxPosition
+            self.foosLinearVelocity = 0
+            self.linearInput = 0
+        elif newRodPosArray[1] < -1*self.maxPosition:
+            newRodPosArray[1] = -1*self.maxPosition
+            self.foosLinearVelocity = 0
+            self.linearInput = 0
+
+        newRodRotArray = rodRotArray
+        newRodRotArray[1] = rodRotArray[1] + self.foosAngularVelocity * self.fixedDeltaTime
+        if newRodRotArray[1] > self.maxRotation and newRodRotArray < 180:
+            newRodRotArray[1] = self.maxRotation
+            self.foosAngularVelocity = 0
+            self.rotaryInput = 0
+        elif newRodRotArray[1] < 360-1*self.maxRotation:
+            newRodRotArray[1] = 360-1*self.maxPosition #think about this more later
+            self.foosLinearVelocity = 0
+            self.rotaryInput = 0
+
+        return self.foosLinearVelocity, self.foosAngularVelocity
 
     def velToSteps(self, lin, rot):
         #to change speed to steps:
