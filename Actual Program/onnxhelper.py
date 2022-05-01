@@ -1,9 +1,10 @@
 import numpy as np
 import onnx
 import onnxruntime as ort
-from onnx import numpy_helper
+#from onnx import numpy_helper
 
 class OnnxHelper():
+
     def __init__(self):
         self.model_path = "Foosball.onnx"
 
@@ -134,3 +135,4 @@ class OnnxHelper():
         #to change speed to steps:
         rot = int(steps / 200 * 360)
         return rot
+        

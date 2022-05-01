@@ -5,6 +5,7 @@ import imutils
 def findAruco(frame):
     this_aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
     params = cv2.aruco.DetectorParameters_create()
+    #print(cv2.aruco.detectMarkers(frame, this_aruco_dict, parameters=params))
     corners, ids, rejected = cv2.aruco.detectMarkers(frame, this_aruco_dict, parameters=params)
     '''
             note: corners is a 4d tuple, like:
@@ -116,8 +117,8 @@ def getRodPoints(frame):
     return pts, frame
 
 def getBallPos(frame):
-    orangeLower = (10, 100, 100)
-    orangeUpper = (30, 255, 255)
+    orangeLower = (10, 30, 100)
+    orangeUpper = (40, 255, 255)
 
     while True:
         
@@ -125,14 +126,14 @@ def getBallPos(frame):
         #note - this is taken care of in main.py
 
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
-        cv2.imshow("blurred", blurred)
+        #cv2.imshow("blurred", blurred)
 
         blurred = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
         mask = cv2.inRange(blurred, orangeLower, orangeUpper)
-        #mask = cv2.erode(mask, None, iterations=1)
+        mask = cv2.erode(mask, None, iterations=1)
         mask = cv2.dilate(mask, None, iterations=5)
-        cv2.imshow("masked", mask)
+        #cv2.imshow("masked", mask)
 
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE)

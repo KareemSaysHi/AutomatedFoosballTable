@@ -12,8 +12,8 @@ class AutomatedFoosballTable():
     
     def __init__(self):
 
-        #open serial
-        #self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=5) 
+        open serial
+        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=5) 
         self.specialNumber = 123456789
 
         #define some standard values:
@@ -24,23 +24,22 @@ class AutomatedFoosballTable():
         self.noBallCounter = 0
 
         self.ct = CentroidTracker()
+        
         self.oh = OnnxHelper()
 
         self.totalStepCounter = 0
         self.readRotCounterLim = 100
 
-        try:
-            self.cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
-        except:
-            self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(-1)
+            
         self.cap.set(3, 960)
         self.cap.set(4, 540)
-
+      
         #Look for four aruco tags
 
         while True: 
             ret, frame = self.cap.read()
-            
+            #cv2.imshow("frame", frame)
             arucos = cvmethods.findAruco(frame)
             cv2.imshow("aruco", frame)
             if arucos[3] == True: #if four have been found
@@ -48,9 +47,8 @@ class AutomatedFoosballTable():
             
             if cv2.waitKey(1) & 0xFF == ord('q'):  
                 self.end()
+                
                 sys.exit("Manually exited the program")
-
-            time.sleep(0.5)
         
         cv2.destroyAllWindows()
 
@@ -84,7 +82,7 @@ class AutomatedFoosballTable():
             frame = self.newFrame()
             frame = imutils.resize(frame, width=300)
 
-            cv2.imshow("frame", frame)
+            #cv2.imshow("frame", frame)
             ball, center = cvmethods.getBallPos(frame)
             cv2.imshow("ball tracking", ball)
             
@@ -195,6 +193,7 @@ class AutomatedFoosballTable():
     def newFrame(self):
         ret, frame = self.cap.read()
         return cvmethods.transformPerspective(frame, *self.transParams)
+
  
     def end(self):
         self.cap.release()
@@ -204,4 +203,4 @@ class AutomatedFoosballTable():
 if __name__ == "__main__":
     AFT = AutomatedFoosballTable()
     AFT.main()
-    
+
