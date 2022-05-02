@@ -6,26 +6,28 @@ import onnxruntime as ort
 class OnnxHelper():
 
     def __init__(self):
-        self.model_path = "Foosball.onnx"
-
-        self.velocityScalar = 8
-        self.angularVelocityScalar = 8
+        self.model_path = "spfoos.onnx"
         self.maxPosition = 3.6125
         self.maxRotation = 45
-        self.maxAcceleration = 3
-        self.maxAngularAcceleration = 500
         self.foosLinearVelocity = 0
         self.foosAngularVelocity = 0
         self.fixedDeltaTime = 0.02
         self.unityZScalar = 4.25
+        self.lastInput = 0
+        self.lastInput = 0
 
         self.linearInput = 0
         self.rotaryInput = 0
+
+        onnx_model = onnx.load(self.model_path)
+        onnx.checker.check_model(onnx_model)
 
     def correctRodPos(self, rodPosArray):
         pass #this will adjust for the dist of where things are placed
 
     def setInputs(self, ballPos, rodPosArray, rodRotArray):
+        self.lastInput = np.array([*toBallNormalized, toBallMagnitude, agentPos, agentRot, enemyPos], dtype=np.float32)
+
         toBall = np.array([(ballPos[1] - rodPosArray[1][1])*self.unityZScalar, 0, (ballPos[0] - rodPosArray[1][0]*self.unityZScalar)])
         #A few things to note: rodPosArray[1] refers to 2nd closest to top of frame (id 1)
         #Unity's system is [our height, 0, our width] or [y, 0, x]
@@ -36,7 +38,7 @@ class OnnxHelper():
         agentRot = rodRotArray[1]
 
         enemyPos = rodPosArray[0]*self.unityZScalar        
-
+    
         return np.array([*toBallNormalized, toBallMagnitude, agentPos, agentRot, enemyPos], dtype=np.float32)
         #to ball.normalized (3)
         #to ball.magnitude (1)
@@ -44,28 +46,34 @@ class OnnxHelper():
         #agent.rotation (1)
         #enemyagent.position (1)
     
-    def runOnnx(self, inputs):
-        onnx_model = onnx.load(self.model_path)
-        onnx.checker.check_model(onnx_model)
+    def runOnnx(self, ballPos, rodPosArray, rodRotArray):
+
+        self.input = self.setInputs(ballPos, rodPosArray, rodRotArray)
+
+        totalInputs = np.concatenate(self.input, self.lastInput, axis=0)
+        
 
         #print([input.name for input in onnx_model.graph.input])
         #print([output.name for output in onnx_model.graph.output])
-
         ort_sess = ort.InferenceSession("Foosball.onnx")
 
-        outputs = ort_sess.run(["continuous_actions"], {'obs_0': inputs}) #None returns all of the outputs
+        outputs = ort_sess.run(["continuous_actions"], {'obs_0': totalInputs}) #None returns all of the outputs
 
-        return outputs #This is going to return the output weights, check unity for the rest of the translation
+        linVel, rotVel = self.rawOutputToVel(self, rodPosArray, rodRotArray, outputs)
+
+        linSteps, rotSteps = self.velToSteps(linVel, rotVel)
+        
+        return linSteps, rotSteps
 
     def rawOutputToVel(self, rodPosArray, rodRotArray, outputArray): #currently only for one rod
         if (outputArray[0] == 0):
             self.linearInput -= 1
-        elif (outputArray[0] == 1):
+        elif (outputArray[0] == 2):
             self.linearInput += 1
 
         if (outputArray[1] == 0):
             self.rotaryInput -= 1
-        elif (outputArray[1] == 1):
+        elif (outputArray[1] == 2):
             self.rotaryInput += 1
 
 
@@ -132,7 +140,7 @@ class OnnxHelper():
         return linSteps, rotSteps
 
     def stepsToRot(self, steps):
-        #to change speed to steps:
+        #to change steps to speed:
         rot = int(steps / 200 * 360)
         return rot
         

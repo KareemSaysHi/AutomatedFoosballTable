@@ -163,10 +163,7 @@ class AutomatedFoosballTable():
                     text = "ID {}".format(objectId)
                     cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                ohParams = self.oh.setInputs(self.ballPos, self.rodPos, self.rodRot) #set inputs for onnx
-                ohResults = self.oh.runOnnx(ohParams) #run onnx
-                velPos, velRot = self.oh.rawOutputToVel(self.rodPos, self.rodRot, ohResults) #get velocities
-                linSteps, rotSteps = self.oh.velToSteps(velPos, velRot) #convert to steps
+                linSteps, rotSteps = self.oh.runOnnx(self.ballPos, self.rodPos, self.rodRot) #run onnx
                 sendStr = str(linSteps) + "," + str(rotSteps) + ",0,0,0,0,\n" #format
                 sendStr = bytes(sendStr, 'utf-8')
                 self.ser.write(sendStr) #send to arduino
