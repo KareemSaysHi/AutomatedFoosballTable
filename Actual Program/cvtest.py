@@ -82,7 +82,7 @@ class TestClass():
     
     def newFrame(self, cap):
         ret, frame = cap.read()
-        #frame = self.resize(frame, 50)
+        frame = self.resize(frame, 50)
         return cvmethods.transformPerspective(frame, *self.transParams)
 
 tc = TestClass()

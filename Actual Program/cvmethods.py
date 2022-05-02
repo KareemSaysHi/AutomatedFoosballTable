@@ -81,16 +81,16 @@ def getRodPoints(frame):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     blurred=frame
     #blurred = cv2.GaussianBlur(frame, (11, 11), 0)
-    cv2.imshow("blurred", blurred)
+    #cv2.imshow("blurred", blurred)
 
     frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
 
 
     mask = cv2.inRange(blurred, pinkLower, pinkUpper)
-    cv2.imshow("maskedbeforeerode", mask)
+    #cv2.imshow("maskedbeforeerode", mask)
     mask = cv2.erode(mask, None, iterations=3)
     mask = cv2.dilate(mask, None, iterations=3)
-    cv2.imshow("masked", mask)
+    #cv2.imshow("masked", mask)
 
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
     cv2.CHAIN_APPROX_SIMPLE)

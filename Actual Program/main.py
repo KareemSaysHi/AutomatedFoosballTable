@@ -13,7 +13,7 @@ class AutomatedFoosballTable():
     def __init__(self):
 
         #open serial
-        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=5) 
+        #self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=5) 
         self.specialNumber = 123456789
 
         #define some standard values:
@@ -79,7 +79,7 @@ class AutomatedFoosballTable():
         print("looking for ball")
         while True:
             frame = self.newFrame()
-            frame = self.resize(frame, 50)
+
             ball, center = cvmethods.getBallPos(frame)
             cv2.imshow("ball tracking", ball)
             
@@ -88,7 +88,6 @@ class AutomatedFoosballTable():
             elif cv2.waitKey(1) & 0xFF == ord('q'):  
                 self.end()
                 sys.exit("Manually exited the program")
-            time.sleep(0.1)
 
         cv2.destroyAllWindows()
 
@@ -99,7 +98,6 @@ class AutomatedFoosballTable():
         counter = 0
         while True:
             frame = self.newFrame()
-            frame = imutils.resize(frame, width=300)
             rodPoints, frame = cvmethods.getRodPoints(frame)
             cv2.imshow("frame", frame)
             print("rodpoints then counter twice")
@@ -187,9 +185,9 @@ class AutomatedFoosballTable():
                 if key == ord("q"):
                     break
     
-    def newFrame(self, cap):
-        ret, frame = cap.read()
-        #frame = self.resize(frame, 50)
+    def newFrame(self):
+        ret, frame = self.cap.read()
+        frame = self.resize(frame, 50)
         return cvmethods.transformPerspective(frame, *self.transParams)
 
  
@@ -209,4 +207,6 @@ class AutomatedFoosballTable():
 if __name__ == "__main__":
     AFT = AutomatedFoosballTable()
     AFT.main()
+    
+
 
