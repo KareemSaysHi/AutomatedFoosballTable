@@ -187,8 +187,9 @@ class AutomatedFoosballTable():
                 if key == ord("q"):
                     break
     
-    def newFrame(self):
-        ret, frame = self.cap.read()
+    def newFrame(self, cap):
+        ret, frame = cap.read()
+        #frame = self.resize(frame, 50)
         return cvmethods.transformPerspective(frame, *self.transParams)
 
  
@@ -196,10 +197,14 @@ class AutomatedFoosballTable():
         self.cap.release()
         cv2.destroyAllWindows()
 
-    def newFrame(self, cap):
-        ret, frame = cap.read()
-        frame = self.resize(frame, 50)
-        return cvmethods.transformPerspective(frame, *self.transParams)
+    def resize(self, frame, scale_percent):
+        width = int(frame.shape[1] * scale_percent / 100)
+        height = int(frame.shape[0] * scale_percent / 100)
+        
+        dim = (width, height)
+        
+        resized = cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
+        return resized
 
 if __name__ == "__main__":
     AFT = AutomatedFoosballTable()
