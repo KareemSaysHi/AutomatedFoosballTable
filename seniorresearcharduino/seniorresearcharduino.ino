@@ -42,7 +42,6 @@ void loop() {
   unsigned long currentMillis = millis();
   
   if (stringComplete) {
-    Serial.write("we recieved something!\n");
     digitalWrite(LED_BUILTIN, HIGH);
     int writeCounter = 0;
     while((pos = inputString.indexOf(delimiter)) != -1) { //going to be of form val, val, val, ... , val,

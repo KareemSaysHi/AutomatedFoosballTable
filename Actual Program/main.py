@@ -12,7 +12,7 @@ class AutomatedFoosballTable():
     
     def __init__(self):
 
-        open serial
+        #open serial
         self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=5) 
         self.specialNumber = 123456789
 
@@ -39,7 +39,7 @@ class AutomatedFoosballTable():
 
         while True: 
             ret, frame = self.cap.read()
-            #cv2.imshow("frame", frame)
+            frame = self.resize(frame, 50)
             arucos = cvmethods.findAruco(frame)
             cv2.imshow("aruco", frame)
             if arucos[3] == True: #if four have been found
@@ -62,7 +62,6 @@ class AutomatedFoosballTable():
         self.transParams = list(pTrans)
 
         frame = cvmethods.transformPerspective(frame, *self.transParams)
-        frame = imutils.resize(frame, width=300)
 
         cv2.imshow("warped", frame)
         print("press c to continue, and q to quit")
@@ -80,15 +79,13 @@ class AutomatedFoosballTable():
         print("looking for ball")
         while True:
             frame = self.newFrame()
-            frame = imutils.resize(frame, width=300)
-
-            #cv2.imshow("frame", frame)
+            frame = self.resize(frame, 50)
             ball, center = cvmethods.getBallPos(frame)
             cv2.imshow("ball tracking", ball)
             
-            if cv2.waitKey(1) & 0xFF == ord('q'):  
+            if cv2.waitKey(1) & 0xFF == ord('c'):  
                 break
-            elif cv2.waitKey(1) & 0xFF == ord('c'):  
+            elif cv2.waitKey(1) & 0xFF == ord('q'):  
                 self.end()
                 sys.exit("Manually exited the program")
             time.sleep(0.1)
@@ -198,7 +195,11 @@ class AutomatedFoosballTable():
     def end(self):
         self.cap.release()
         cv2.destroyAllWindows()
-    
+
+    def newFrame(self, cap):
+        ret, frame = cap.read()
+        frame = self.resize(frame, 50)
+        return cvmethods.transformPerspective(frame, *self.transParams)
 
 if __name__ == "__main__":
     AFT = AutomatedFoosballTable()
