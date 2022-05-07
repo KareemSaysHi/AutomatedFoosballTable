@@ -15,6 +15,10 @@ int stepperCounter[3][2] = {{10000, 10000}, {10000, 10000}, {10000, 10000}};
 int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 String inputString = "";
 String delimiter = ",";
+int dutyOn = 500;
+int dutyOff = 10;
+
+int waitTime = 100;
 
 float lastStepMillis = 0;
 
@@ -26,10 +30,14 @@ int counter = 0;
 int rotCheckLim = 5;
 int pos;
 
+unsigned long currentMillis = millis();
+unsigned long lastMillis = 0;
+
 void setup() {
   Serial.begin(250000);
   Serial.println("starting");
   pinMode(LED_BUILTIN, OUTPUT);
+  delay(2000);
 }
 
 void loop() {
@@ -39,8 +47,6 @@ void loop() {
     serialEvent();
   }
 
-  unsigned long currentMillis = millis();
-  
   if (stringComplete) {
     digitalWrite(LED_BUILTIN, HIGH);
     int writeCounter = 0;
@@ -59,7 +65,6 @@ void loop() {
     //Serial.println(stepperCounter[2][1]);
     //Serial.print("at counter ");
     //Serial.println(counter);
-    MoveSteppers(); //actually move the steppers
     
     counter++;
     Serial.write(counter);
@@ -81,6 +86,15 @@ void loop() {
     inputString = "";
     stringComplete = false;
   }
+  MoveSteppers(); //actually move the steppers
+  //Serial.println("------------------------------");
+  //Serial.println(stepperCounter[0][0]);
+  //Serial.println(stepperCounter[0][1]);
+  //Serial.println(stepperCounter[1][0]);
+  //Serial.println(stepperCounter[1][1]);
+  //Serial.println(stepperCounter[2][0]);
+  //Serial.println(stepperCounter[2][1]);
+  Serial.println(millis());
 }
 
 void serialEvent() {
@@ -94,6 +108,10 @@ void serialEvent() {
 }
 
 void MoveSteppers() {
+  if (millis() == lastMillis) {
+    return;
+  }
+  lastMillis = millis();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 2; j++) {      
       if (stepperCounter[i][j] != 0) {
@@ -101,23 +119,47 @@ void MoveSteppers() {
         if (stepperCounter[i][j] % 4 == 1) {
           digitalWrite(stepperPins[i][j][0], HIGH); //HIGH
           digitalWrite(stepperPins[i][j][1], LOW);
-          digitalWrite(stepperPins[i][j][2], LOW);
+          digitalWrite(stepperPins[i][j][2], HIGH);
           digitalWrite(stepperPins[i][j][3], LOW);
+          //delayMicroseconds(dutyOn);
+          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+          //digitalWrite(stepperPins[i][j][1], LOW);
+          //digitalWrite(stepperPins[i][j][2], LOW);
+          //digitalWrite(stepperPins[i][j][3], LOW);
+          //delayMicroseconds(dutyOff);
         } else if (stepperCounter[i][j] % 4 == 2) {
           digitalWrite(stepperPins[i][j][0], LOW);
           digitalWrite(stepperPins[i][j][1], HIGH); //HIGH
-          digitalWrite(stepperPins[i][j][2], LOW);
+          digitalWrite(stepperPins[i][j][2], HIGH);
           digitalWrite(stepperPins[i][j][3], LOW);
+          //delayMicroseconds(dutyOn);
+          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+          //digitalWrite(stepperPins[i][j][1], LOW);
+          //digitalWrite(stepperPins[i][j][2], LOW);
+          //digitalWrite(stepperPins[i][j][3], LOW);
+          //delayMicroseconds(dutyOff);
         } else if (stepperCounter[i][j] % 4 == 3) {
           digitalWrite(stepperPins[i][j][0], LOW);
-          digitalWrite(stepperPins[i][j][1], LOW);
-          digitalWrite(stepperPins[i][j][2], HIGH); //HIGH
-          digitalWrite(stepperPins[i][j][3], LOW);
+          digitalWrite(stepperPins[i][j][1], HIGH);
+          digitalWrite(stepperPins[i][j][2], LOW); //HIGH
+          digitalWrite(stepperPins[i][j][3], HIGH);
+          //delayMicroseconds(dutyOn);
+          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+          //digitalWrite(stepperPins[i][j][1], LOW);
+          //digitalWrite(stepperPins[i][j][2], LOW);
+          //digitalWrite(stepperPins[i][j][3], LOW);
+          //delayMicroseconds(dutyOff);
         } else {
-          digitalWrite(stepperPins[i][j][0], LOW);
+          digitalWrite(stepperPins[i][j][0], HIGH);
           digitalWrite(stepperPins[i][j][1], LOW);
           digitalWrite(stepperPins[i][j][2], LOW);
           digitalWrite(stepperPins[i][j][3], HIGH); //HIGH
+          //delayMicroseconds(dutyOn);
+          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+          //digitalWrite(stepperPins[i][j][1], LOW);
+          //digitalWrite(stepperPins[i][j][2], LOW);
+          //digitalWrite(stepperPins[i][j][3], LOW);
+          //delayMicroseconds(dutyOff);
         }      
         if (stepperCounter[i][j] < 0) {
           stepperCounter[i][j]++;
@@ -127,8 +169,16 @@ void MoveSteppers() {
           stepperCounter[i][j]--;
           stepperPos[i][j]++;
         }
-      }      
+      } else {
+      digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+      digitalWrite(stepperPins[i][j][1], LOW);
+      digitalWrite(stepperPins[i][j][2], LOW);
+      digitalWrite(stepperPins[i][j][3], LOW);
+      delayMicroseconds(dutyOff);  
+      } 
     }
+
+    
   }
 }
 
