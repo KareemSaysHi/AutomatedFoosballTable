@@ -1,5 +1,5 @@
 #include <Stepper.h>
-
+#include <stdlib.h>
 /*
  * TO DO:
  * NOTE: The script is chill enough (for now) that we can handle around 5000 steps in .25s, so that allows for full speed of all motors (assuming we have 6) for 800 steps per .25s
@@ -9,9 +9,12 @@ int stepperPins[3][2][4] = {{{2, 3, 4, 5}, {6, 7, 8, 9}},
                             {{10, 11, 12, 13}, {14, 15, 16, 17}},
                             {{18, 19, 20, 21}, {22, 23, 24, 25}}};
 
+int val1 = 0;
+int val2 = 0;
+
 bool stringComplete = false;
 float pwmSpeed = 10; //in milliseconds
-int stepperCounter[3][2] = {{10000, 10000}, {10000, 10000}, {10000, 10000}};
+int stepperCounter[3][2] = {{0, 100}, {0, 0}, {0, 0}};
 int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 String inputString = "";
 String delimiter = ",";
@@ -67,8 +70,7 @@ void loop() {
     //Serial.println(counter);
     
     counter++;
-    Serial.write(counter);
-    Serial.write('\n');
+    /*
     if (counter >= rotCheckLim) { //basically a short clock
       Serial.println("returning the rotation values");
       //less complicated
@@ -81,12 +83,22 @@ void loop() {
       Serial.write('\n');
       Serial.println("returning to normal stuff now");
       counter = 0;
-    }
+    }*/
     
     inputString = "";
     stringComplete = false;
   }
   MoveSteppers(); //actually move the steppers
+  /*if (millis()%1000 < 1 and counter > 0) {
+    char holder [33];
+    itoa(stepperCounter[0][0], holder, 10);
+    Serial.write(holder);
+    Serial.write(" ");
+    itoa(stepperCounter[0][1], holder, 10);
+    Serial.write(holder);
+    Serial.write('\n');
+  }*/
+  
   //Serial.println("------------------------------");
   //Serial.println(stepperCounter[0][0]);
   //Serial.println(stepperCounter[0][1]);
@@ -94,7 +106,7 @@ void loop() {
   //Serial.println(stepperCounter[1][1]);
   //Serial.println(stepperCounter[2][0]);
   //Serial.println(stepperCounter[2][1]);
-  Serial.println(millis());
+  //Serial.println(millis());
 }
 
 void serialEvent() {
