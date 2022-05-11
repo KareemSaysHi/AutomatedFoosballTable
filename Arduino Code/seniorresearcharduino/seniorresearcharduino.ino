@@ -5,25 +5,22 @@
  * NOTE: The script is chill enough (for now) that we can handle around 5000 steps in .25s, so that allows for full speed of all motors (assuming we have 6) for 800 steps per .25s
  */
 
-int stepperPins[3][2][4] = {{{2, 3, 4, 5}, {6, 7, 8, 9}}, 
-                            {{10, 11, 12, 13}, {14, 15, 16, 17}},
-                            {{18, 19, 20, 21}, {22, 23, 24, 25}}};
+int stepperPins[3][2][4] = {{{22, 23, 24, 25}, {26, 27, 28, 29}}, 
+                            {{30, 31, 32, 33}, {34, 35, 36, 37}},
+                            {{42, 43, 44, 45}, {46, 47, 48, 49}}};
 
-int val1 = 0;
-int val2 = 0;
+int deltaTime = 1000; //in milliseconds
+int deltaOne = 0;
 
 bool stringComplete = false;
-float pwmSpeed = 10; //in milliseconds
-int stepperCounter[3][2] = {{0, 100}, {0, 0}, {0, 0}};
+int stepperCounter[3][2] = {{0, 800}, {0, 0}, {0, 0}};
 int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}};
+float stepInterval[3][2] = {{0, 0}, {0, 0}, {0, 0}};
+int intervalCounter[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 String inputString = "";
 String delimiter = ",";
 int dutyOn = 500;
 int dutyOff = 10;
-
-int waitTime = 100;
-
-float lastStepMillis = 0;
 
 int specialNumber = 123456789;
 int linSteps = 0;
@@ -37,10 +34,34 @@ unsigned long currentMillis = millis();
 unsigned long lastMillis = 0;
 
 void setup() {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 2; j++) {
+      for (int k = 0; k < 4; k++) {
+        pinMode(stepperPins[i][j][k], OUTPUT);
+      }
+    }
+  }
   Serial.begin(250000);
   Serial.println("starting");
   pinMode(LED_BUILTIN, OUTPUT);
   delay(2000);
+
+  //reset all the intervalCounters
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 2; j++) {
+      intervalCounter[i][j] = 0;
+    }
+  }
+
+  //at this point we've gotten new data, now scale the time we have to wait:
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 2; j++) {
+      stepInterval[i][j] = float(deltaTime)/float(stepperCounter[i][j]); //figure out how many milliseconds per step
+    }
+  }
+
+  deltaOne = millis();
+  Serial.println(stepInterval[0][1]);
 }
 
 void loop() {
@@ -51,6 +72,8 @@ void loop() {
   }
 
   if (stringComplete) {
+    deltaTime = millis() - deltaOne; //this is how long it took between the last two transactions
+    
     digitalWrite(LED_BUILTIN, HIGH);
     int writeCounter = 0;
     while((pos = inputString.indexOf(delimiter)) != -1) { //going to be of form val, val, val, ... , val,
@@ -70,7 +93,26 @@ void loop() {
     //Serial.println(counter);
     
     counter++;
-    /*
+
+    //reset all the intervalCounters
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 2; j++) {
+        intervalCounter[i][j] = 0;
+      }
+    }
+
+    //at this point we've gotten new data, now scale the time we have to wait:
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 2; j++) {
+        if (stepperCounter[i][j] != 0){
+          stepInterval[i][j] = deltaTime/stepperCounter[i][j]; //figure out how many milliseconds per step
+        } else {
+          stepInterval[i][j] = 1000000000;
+        }
+      }
+    }
+    
+
     if (counter >= rotCheckLim) { //basically a short clock
       Serial.println("returning the rotation values");
       //less complicated
@@ -83,7 +125,7 @@ void loop() {
       Serial.write('\n');
       Serial.println("returning to normal stuff now");
       counter = 0;
-    }*/
+    }
     
     inputString = "";
     stringComplete = false;
@@ -120,58 +162,44 @@ void serialEvent() {
 }
 
 void MoveSteppers() {
-  if (millis() == lastMillis) {
-    return;
-  }
-  lastMillis = millis();
+  
   for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 2; j++) {      
-      if (stepperCounter[i][j] != 0) {
-        //Serial.println(millis());
-        if (stepperCounter[i][j] % 4 == 1) {
+    for (int j = 0; j < 2; j++) {
+
+
+      if (stepperCounter[i][j] != 0 and (millis() - deltaOne) > stepInterval[i][j]*(intervalCounter[i][j]-1) + 2 ) { //.5microsec being the minimum time we need on for step to happen
+        //minus one on intervalCounter cause we just increased it
+        digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+        digitalWrite(stepperPins[i][j][1], LOW);
+        digitalWrite(stepperPins[i][j][2], LOW);
+        digitalWrite(stepperPins[i][j][3], LOW);
+        
+      } else if (stepperCounter[i][j] != 0 and (millis() - deltaOne) > stepInterval[i][j]*intervalCounter[i][j]) { //if it's time to step once:
+        intervalCounter[i][j]++; //increment the counter to move it up
+        
+        if ((stepperCounter[i][j] % 4 + 4) % 4 == 1) {
           digitalWrite(stepperPins[i][j][0], HIGH); //HIGH
           digitalWrite(stepperPins[i][j][1], LOW);
           digitalWrite(stepperPins[i][j][2], HIGH);
           digitalWrite(stepperPins[i][j][3], LOW);
-          //delayMicroseconds(dutyOn);
-          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
-          //digitalWrite(stepperPins[i][j][1], LOW);
-          //digitalWrite(stepperPins[i][j][2], LOW);
-          //digitalWrite(stepperPins[i][j][3], LOW);
-          //delayMicroseconds(dutyOff);
-        } else if (stepperCounter[i][j] % 4 == 2) {
+
+        } else if ((stepperCounter[i][j] % 4 + 4) % 4 == 2) {
           digitalWrite(stepperPins[i][j][0], LOW);
           digitalWrite(stepperPins[i][j][1], HIGH); //HIGH
           digitalWrite(stepperPins[i][j][2], HIGH);
           digitalWrite(stepperPins[i][j][3], LOW);
-          //delayMicroseconds(dutyOn);
-          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
-          //digitalWrite(stepperPins[i][j][1], LOW);
-          //digitalWrite(stepperPins[i][j][2], LOW);
-          //digitalWrite(stepperPins[i][j][3], LOW);
-          //delayMicroseconds(dutyOff);
-        } else if (stepperCounter[i][j] % 4 == 3) {
+
+        } else if ((stepperCounter[i][j] % 4 + 4) % 4 == 3) {
           digitalWrite(stepperPins[i][j][0], LOW);
           digitalWrite(stepperPins[i][j][1], HIGH);
           digitalWrite(stepperPins[i][j][2], LOW); //HIGH
           digitalWrite(stepperPins[i][j][3], HIGH);
-          //delayMicroseconds(dutyOn);
-          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
-          //digitalWrite(stepperPins[i][j][1], LOW);
-          //digitalWrite(stepperPins[i][j][2], LOW);
-          //digitalWrite(stepperPins[i][j][3], LOW);
-          //delayMicroseconds(dutyOff);
+
         } else {
           digitalWrite(stepperPins[i][j][0], HIGH);
           digitalWrite(stepperPins[i][j][1], LOW);
           digitalWrite(stepperPins[i][j][2], LOW);
           digitalWrite(stepperPins[i][j][3], HIGH); //HIGH
-          //delayMicroseconds(dutyOn);
-          //digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
-          //digitalWrite(stepperPins[i][j][1], LOW);
-          //digitalWrite(stepperPins[i][j][2], LOW);
-          //digitalWrite(stepperPins[i][j][3], LOW);
-          //delayMicroseconds(dutyOff);
         }      
         if (stepperCounter[i][j] < 0) {
           stepperCounter[i][j]++;
@@ -181,16 +209,34 @@ void MoveSteppers() {
           stepperCounter[i][j]--;
           stepperPos[i][j]++;
         }
-      } else {
-      digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
-      digitalWrite(stepperPins[i][j][1], LOW);
-      digitalWrite(stepperPins[i][j][2], LOW);
-      digitalWrite(stepperPins[i][j][3], LOW);
-      delayMicroseconds(dutyOff);  
-      } 
-    }
+      }
+    }  
+  }
+}
 
-    
+void fastDigitalWrite(int pin, int state) {
+  if (pin < 30) {
+    if (state == 1) {
+      PORTA |= 1 << (pin-22)
+    } else {
+      PORTA &= ~(1 << (pin-22))
+    }
+  }
+
+  else if (pin < 40) {
+    if (state == 1) {
+      PORTC |= 1 << (pin-30)
+    } else {
+      PORTC &= ~(1 << (pin-30))
+    }
+  }
+
+  else {
+    if (state == 1) {
+      PORTL |= 1 << (pin-42)
+    } else {
+      PORTL &= ~(1 << (pin-42))
+    }
   }
 }
 
