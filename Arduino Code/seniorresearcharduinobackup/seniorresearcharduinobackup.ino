@@ -24,7 +24,7 @@ int counter = 0;
 int rotCheckLim = 5;
 int pos;
 
-int deltaTime = 1000; //in milliseconds
+int deltaTime = 1000; //in in milliseconds
 unsigned long deltaOne = 0;
 
 void setup() {
@@ -56,7 +56,7 @@ void setup() {
   }
   Serial.println(stepInterval[0][0]);
 
-  deltaOne = millis();
+  deltaOne = micros();
   Serial.println("beginning loop");
 }
 
@@ -178,7 +178,7 @@ void MoveSteppers() {
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 2; j++) { 
       if (stepperCounter[i][j] != 0) {
-        if ((millis()-deltaOne) > intervalCounter[i][j]*stepInterval[i][j]) {  
+        if ((micros()-deltaOne) > intervalCounter[i][j]*stepInterval[i][j]*1000) {  
           intervalCounter[i][j]++;
         
           if ((stepperCounter[i][j] % 4 + 4) % 4 == 0) {
