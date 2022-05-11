@@ -7,7 +7,7 @@ int stepperPins[3][2][4] = {{{22, 23, 24, 25}, {26, 27, 28, 29}},
 
 bool stringComplete = false;
 
-int stepperCounter[3][2] = {{1000, 0}, {0, 0}, {0, 0}};
+int stepperCounter[3][2] = {{1000, 1000}, {1000, 1000}, {1000, 1000}};
 int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 float stepInterval[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 int intervalCounter[3][2] = {{0, 0}, {0, 0}, {0, 0}};
