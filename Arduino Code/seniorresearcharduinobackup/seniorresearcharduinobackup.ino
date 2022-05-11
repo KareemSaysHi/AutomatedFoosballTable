@@ -7,7 +7,7 @@ int stepperPins[3][2][4] = {{{22, 23, 24, 25}, {26, 27, 28, 29}},
 
 bool stringComplete = false;
 
-int stepperCounter[3][2] = {{200, 0}, {0, 0}, {0, 0}};
+int stepperCounter[3][2] = {{1000, 0}, {0, 0}, {0, 0}};
 int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 float stepInterval[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 int intervalCounter[3][2] = {{0, 0}, {0, 0}, {0, 0}};
@@ -213,12 +213,7 @@ void MoveSteppers() {
             stepperCounter[i][j]--;
             stepperPos[i][j]++;
           }
-          delayMicroseconds(1000);
-    
-          fastDigitalWrite(stepperPins[i][j][0], LOW);
-          fastDigitalWrite(stepperPins[i][j][1], LOW);
-          fastDigitalWrite(stepperPins[i][j][2], LOW);
-          fastDigitalWrite(stepperPins[i][j][3], LOW);
+          
         }
       } else {
         fastDigitalWrite(stepperPins[i][j][0], LOW);
@@ -227,7 +222,18 @@ void MoveSteppers() {
         fastDigitalWrite(stepperPins[i][j][3], LOW);
       }
     }
+  } 
+  delayMicroseconds(600);
+
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      fastDigitalWrite(stepperPins[i][j][0], LOW);
+      fastDigitalWrite(stepperPins[i][j][1], LOW);
+      fastDigitalWrite(stepperPins[i][j][2], LOW);
+      fastDigitalWrite(stepperPins[i][j][3], LOW);
+    }
   }
+  
 }
 
 
