@@ -13,14 +13,12 @@ int deltaTime = 1000; //in milliseconds
 int deltaOne = 0;
 
 bool stringComplete = false;
-int stepperCounter[3][2] = {{0, 800}, {0, 0}, {0, 0}};
+int stepperCounter[3][2] = {{800, 800}, {0, 0}, {0, 0}};
 int stepperPos[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 float stepInterval[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 int intervalCounter[3][2] = {{0, 0}, {0, 0}, {0, 0}};
 String inputString = "";
 String delimiter = ",";
-int dutyOn = 500;
-int dutyOff = 10;
 
 int specialNumber = 123456789;
 int linSteps = 0;
@@ -29,9 +27,6 @@ int writeCounter = 0;
 int counter = 0;
 int rotCheckLim = 5;
 int pos;
-
-unsigned long currentMillis = millis();
-unsigned long lastMillis = 0;
 
 void setup() {
   for (int i = 0; i < 3; i++) {
@@ -60,8 +55,8 @@ void setup() {
     }
   }
 
-  deltaOne = millis();
-  Serial.println(stepInterval[0][1]);
+  deltaOne = micros();
+  
 }
 
 void loop() {
@@ -72,7 +67,7 @@ void loop() {
   }
 
   if (stringComplete) {
-    deltaTime = millis() - deltaOne; //this is how long it took between the last two transactions
+    deltaTime = micros() - deltaOne; //this is how long it took between the last two transactions
     
     digitalWrite(LED_BUILTIN, HIGH);
     int writeCounter = 0;
@@ -166,40 +161,46 @@ void MoveSteppers() {
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 2; j++) {
 
-
-      if (stepperCounter[i][j] != 0 and (millis() - deltaOne) > stepInterval[i][j]*(intervalCounter[i][j]-1) + 2 ) { //.5microsec being the minimum time we need on for step to happen
+      if (stepperCounter[i][j] == 0) {
+        fastDigitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+        fastDigitalWrite(stepperPins[i][j][1], LOW);
+        fastDigitalWrite(stepperPins[i][j][2], LOW);
+        fastDigitalWrite(stepperPins[i][j][3], LOW);
+      }
+      
+      else if ((micros() - deltaOne) > stepInterval[i][j]*(intervalCounter[i][j]-1)*1000+600) { //.5microsec being the minimum time we need on for step to happen
         //minus one on intervalCounter cause we just increased it
-        digitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
-        digitalWrite(stepperPins[i][j][1], LOW);
-        digitalWrite(stepperPins[i][j][2], LOW);
-        digitalWrite(stepperPins[i][j][3], LOW);
+        fastDigitalWrite(stepperPins[i][j][0], LOW); //ALL LOW
+        fastDigitalWrite(stepperPins[i][j][1], LOW);
+        fastDigitalWrite(stepperPins[i][j][2], LOW);
+        fastDigitalWrite(stepperPins[i][j][3], LOW);
         
-      } else if (stepperCounter[i][j] != 0 and (millis() - deltaOne) > stepInterval[i][j]*intervalCounter[i][j]) { //if it's time to step once:
+      } else if (stepperCounter[i][j] != 0 and (micros() - deltaOne) > stepInterval[i][j]*intervalCounter[i][j]*1000) { //if it's time to step once:
         intervalCounter[i][j]++; //increment the counter to move it up
         
-        if ((stepperCounter[i][j] % 4 + 4) % 4 == 1) {
-          digitalWrite(stepperPins[i][j][0], HIGH); //HIGH
-          digitalWrite(stepperPins[i][j][1], LOW);
-          digitalWrite(stepperPins[i][j][2], HIGH);
-          digitalWrite(stepperPins[i][j][3], LOW);
+        if ((stepperCounter[i][j] % 4 + 4) % 4 == 0) {
+          fastDigitalWrite(stepperPins[i][j][0], HIGH); //HIGH
+          fastDigitalWrite(stepperPins[i][j][1], LOW);
+          fastDigitalWrite(stepperPins[i][j][2], LOW);
+          fastDigitalWrite(stepperPins[i][j][3], LOW);
+
+        } else if ((stepperCounter[i][j] % 4 + 4) % 4 == 1) {
+          fastDigitalWrite(stepperPins[i][j][0], LOW);
+          fastDigitalWrite(stepperPins[i][j][1], LOW); //HIGH
+          fastDigitalWrite(stepperPins[i][j][2], HIGH);
+          fastDigitalWrite(stepperPins[i][j][3], LOW);
 
         } else if ((stepperCounter[i][j] % 4 + 4) % 4 == 2) {
-          digitalWrite(stepperPins[i][j][0], LOW);
-          digitalWrite(stepperPins[i][j][1], HIGH); //HIGH
-          digitalWrite(stepperPins[i][j][2], HIGH);
-          digitalWrite(stepperPins[i][j][3], LOW);
-
-        } else if ((stepperCounter[i][j] % 4 + 4) % 4 == 3) {
-          digitalWrite(stepperPins[i][j][0], LOW);
-          digitalWrite(stepperPins[i][j][1], HIGH);
-          digitalWrite(stepperPins[i][j][2], LOW); //HIGH
-          digitalWrite(stepperPins[i][j][3], HIGH);
+          fastDigitalWrite(stepperPins[i][j][0], LOW);
+          fastDigitalWrite(stepperPins[i][j][1], HIGH);
+          fastDigitalWrite(stepperPins[i][j][2], LOW); //HIGH
+          fastDigitalWrite(stepperPins[i][j][3], LOW);
 
         } else {
-          digitalWrite(stepperPins[i][j][0], HIGH);
-          digitalWrite(stepperPins[i][j][1], LOW);
-          digitalWrite(stepperPins[i][j][2], LOW);
-          digitalWrite(stepperPins[i][j][3], HIGH); //HIGH
+          fastDigitalWrite(stepperPins[i][j][0], LOW);
+          fastDigitalWrite(stepperPins[i][j][1], LOW);
+          fastDigitalWrite(stepperPins[i][j][2], LOW);
+          fastDigitalWrite(stepperPins[i][j][3], HIGH); //HIGH
         }      
         if (stepperCounter[i][j] < 0) {
           stepperCounter[i][j]++;
@@ -217,39 +218,25 @@ void MoveSteppers() {
 void fastDigitalWrite(int pin, int state) {
   if (pin < 30) {
     if (state == 1) {
-      PORTA |= 1 << (pin-22)
+      PORTA |= 1 << (pin-22);
     } else {
-      PORTA &= ~(1 << (pin-22))
+      PORTA &= ~(1 << (pin-22));
     }
   }
 
   else if (pin < 40) {
     if (state == 1) {
-      PORTC |= 1 << (pin-30)
+      PORTC |= 1 << (pin-30);
     } else {
-      PORTC &= ~(1 << (pin-30))
+      PORTC &= ~(1 << (pin-30));
     }
   }
 
   else {
     if (state == 1) {
-      PORTL |= 1 << (pin-42)
+      PORTL |= 1 << (pin-42);
     } else {
-      PORTL &= ~(1 << (pin-42))
+      PORTL &= ~(1 << (pin-42));
     }
   }
 }
-
-
-//overly complicated, don't use unless necessary
-/*char rotToSend[];
-      for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 2; h++) {
-          int len = to_string(stepperCounter[i][j][1]).length();
-          char* nchar = new char[len];
-          numberChar = to_chars(nchar, nchar+len, number);
-          strcat(rotToSend, numberChar)
-          strcat(rotToSend, ';')
-        }
-        Serial.write(stepperCounter[i][j][1]) //writes all 8
-      }*/
