@@ -29,7 +29,7 @@ class AutomatedFoosballTable():
         #define some standard values:
         self.isPlaying = False
         self.rodPos = [0, 0, 0, 0, 0, 0] #enemy, offense, enemy, mid, enemy, defense
-        self.rodRot = [None, 0, None, 0, None, 0]
+        self.rodRot = [None, 0, None, 0, None, 0] #this is in terms of steps
         self.ballPos = 0
         self.noBallCounter = 0
 
@@ -44,7 +44,7 @@ class AutomatedFoosballTable():
             
         self.cap.set(3, 960)
         self.cap.set(4, 540)
-      
+
         #Look for four aruco tags
 
         while True: 
@@ -374,9 +374,12 @@ class AutomatedFoosballTable():
 
                 self.rodPos = []
                 for i in range(0, len(objects.items())): #each item is (objectId, centroid)
-                    #print(objects.items())
-                    self.rodPos.append(list(objects.items())[i][0]/frame.shape[1]) #0 for the x value, normalize it
-
+                    print(objects.items())
+                    self.rodPos.append(list(objects.items())[i][1][0]) #0 for the x value
+                print(self.rodPos)
+                self.correctRodPos(frame)
+                print(self.rodPos)
+                
                 print("collecting keyboard now")
                 #essentially a heuristic
                 onnxMatrix = [1, 1, 1, 1, 1, 1]
@@ -453,10 +456,12 @@ class AutomatedFoosballTable():
         return resized
         
     def correctRodPos(self, frame):
-    	for i in range (1, 6, 2):
-    	    self.rodPos[i] += int((4)/2 / 23 * frame.shape[1]) #inches * pixels / inches
+    	for i in range (0, 6):
+    	    self.rodPos[i] += int(2 / 23 * frame.shape[1]) #inches * pixels / inches
     	    self.rodPos[i] -= frame.shape[1]/2 #center it around 0
-    	    self.rodPos[i] = self.rodPos[1] * 23 / frame.shape[1]
+    	    self.rodPos[i] = self.rodPos[i] * 23 / frame.shape[1]
+    	    
+    	    
     	
         
 

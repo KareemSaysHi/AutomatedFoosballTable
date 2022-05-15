@@ -5,7 +5,7 @@ ser = serial.Serial('/dev/ttyACM0', 250000, timeout=5)
 
 while True:
     startTime = time.time()
-    sendStr = "0,0,0,5,0,0,\n"
+    sendStr = "0,0,0,0,0,20,\n"
     sendStr = bytes(sendStr, 'utf-8')
     ser.write(sendStr) #send to arduino
 

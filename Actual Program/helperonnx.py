@@ -9,10 +9,10 @@ class OnnxHelper():
     def __init__(self):
         self.model_path = "spfoos.onnx"
         self.maxPosition = 3.3
-        self.maxRotation = 45
+        self.maxRotation = 50
         self.foosLinearVelocity = 0
         self.foosAngularVelocity = 0
-        self.fixedDeltaTime = 0.02
+        self.fixedDeltaTime = 0.1
         self.unityZScalar = 4.25
         self.lastInput = 0
         self.lastInput = 0
@@ -42,7 +42,7 @@ class OnnxHelper():
         self.angularVelocities = [self.angularVelocityOffense, self.angularVelocityMid, 
         self.angularVelocityDefense]
 
-        self.maxPosArray = [3.6125, 2.5, 3.6125]
+        self.maxPosArray = [3, 2.5, 3]
 
     def setInputs(self, ballPos, rodPosArray, rodRotArray):
         #print("this is ballPos")
@@ -252,11 +252,13 @@ class OnnxHelper():
             newRodPosArray[players[i]] = rodPosArray[players[i]] + self.linearVelocities[i] * self.fixedDeltaTime #update
             if newRodPosArray[players[i]] > self.maxPosArray[i]: #if outside
                 newRodPosArray[players[i]] = self.maxPosition #fix
-                self.linearVelocities[i] = 0
+                if (self.linearVelocities[i] > 0):
+                    self.linearVelocities[i] = 0
                 self.linearInputs[i] = 0
             elif newRodPosArray[players[i]] < -1*self.maxPosArray[i]:
                 newRodPosArray[players[i]] = -1*self.maxPosArray[i]
-                self.linearVelocities[i] = 0
+                if (self.linearVelocities[i] < 0):
+                    self.linearVelocities[i] = 0
                 self.linearInputs[i] = 0
                 
         print(self.linearVelocities)
@@ -264,25 +266,31 @@ class OnnxHelper():
         for j in range (0, 3):
             if (self.rotaryInputs[j] >= 2):
                 self.rotaryInputs[j] = 2
-                self.angularVelocities[j] = 1200
+                self.angularVelocities[j] = 600 #1200 600
             elif (self.rotaryInputs[j] == 1):
-                self.angularVelocities[j] = 600
+                self.angularVelocities[j] = 300
             elif (self.rotaryInputs[j] == 0):
                 self.angularVelocities[j] = 0
             elif (self.rotaryInputs[j] == -1):
-                self.angularVelocities[j] = -600
+                self.angularVelocities[j] = -300
             else:
                 self.rotaryInputs[j] = -2
-                self.angularVelocities[j] = -1200        
+                self.angularVelocities[j] = -600        
 
             newRodRotArray = rodRotArray #copy
-            newRodRotArray[players[j]] = rodRotArray[players[j]] + self.angularVelocities[j] * self.fixedDeltaTime #update
-            if newRodRotArray[players[j]] > self.maxRotation and newRodRotArray[players[j]] < 180:
+            print(newRodRotArray);
+            
+            #angle tracking isn't accurate enough so we're gonna track steps
+            
+            rotSteps = int(self.angularVelocities[j] * 200 / 360 * self.fixedDeltaTime) #multiply by steps, divided by degrees, times deltaTime
+
+            newRodRotArray[players[j]] = rodRotArray[players[j]] + rotSteps
+            if newRodRotArray[players[j]] > self.maxRotation:
                 newRodRotArray[players[j]] = self.maxRotation
                 self.angularVelocities[j] = 0
                 self.rotaryInputs[j] = 0
             elif newRodRotArray[players[j]] < -1*self.maxRotation:
-                newRodRotArray[1] = -1*self.maxRotation #think about this more later
+                newRodRotArray[players[j]] = -1*self.maxRotation #think about this more later
                 self.angularVelocities[j] = 0
                 self.rotaryInputs[j] = 0
 
@@ -291,8 +299,8 @@ class OnnxHelper():
 
     def velToSteps(self, lin, rot):
         #to change speed to steps:
-        linSteps = int(lin / 6.28 * 200 * self.fixedDeltaTime * 5) #divide by circumference, multiply by steps, times deltaTime, the 5 is just for longer time
-        rotSteps = int(rot * 200 / 360 * self.fixedDeltaTime * 5) #multiply by steps, divided by degrees, times deltaTime
+        linSteps = int(lin / 6.28 * 200 * self.fixedDeltaTime) #divide by circumference, multiply by steps, times deltaTime, the 5 is just for longer time
+        rotSteps = int(rot * 200 / 360 * self.fixedDeltaTime) #multiply by steps, divided by degrees, times deltaTime
 
         return linSteps, rotSteps
 
