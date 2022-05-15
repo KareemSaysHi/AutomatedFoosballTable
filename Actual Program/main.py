@@ -352,7 +352,8 @@ class AutomatedFoosballTable():
 
     def keyboardControlThrees(self):
         print("in keyboard threes")
-        while True:
+        while True:        
+            startTime = time.time()
             self.totalStepCounter += 1 #update counters
             frame = self.newFrame() #make a new frame
             ball, center = cvmethods.getBallPos(frame) #get ball data
@@ -373,45 +374,46 @@ class AutomatedFoosballTable():
 
                 self.rodPos = []
                 for i in range(0, len(objects.items())): #each item is (objectId, centroid)
-                    print(objects.items())
-                    self.rodPos.append([list(objects.items())[i][0]/frame.shape[1]]) #0 for the x value, normalize it
+                    #print(objects.items())
+                    self.rodPos.append(list(objects.items())[i][0]/frame.shape[1]) #0 for the x value, normalize it
 
-
+                print("collecting keyboard now")
                 #essentially a heuristic
                 onnxMatrix = [1, 1, 1, 1, 1, 1]
-                if keyboard.read_key() == "q":
+                if keyboard.is_pressed("q"):
                     onnxMatrix[0] = 0
-                elif keyboard.read_key() == "w":
+                elif keyboard.is_pressed("w"):
                     onnxMatrix[0] = 2
-                if keyboard.read_key() == "e":
+                if keyboard.is_pressed("e"):
                     onnxMatrix[3] = 0
-                elif keyboard.read_key() == "r":
+                elif keyboard.is_pressed("r"):
                     onnxMatrix[3] = 2
-                if keyboard.read_key() == "a":
+                if keyboard.is_pressed("a"):
                     onnxMatrix[1] = 0
-                elif keyboard.read_key() == "s":
+                elif keyboard.is_pressed("s"):
                     onnxMatrix[1] = 2
-                if keyboard.read_key() == "d":
+                if keyboard.is_pressed("d"):
                     onnxMatrix[4] = 0
-                elif keyboard.read_key() == "f":
+                elif keyboard.is_pressed("f"):
                     onnxMatrix[4] = 2
-                if keyboard.read_key() == "z":
+                if keyboard.is_pressed("z"):
                     onnxMatrix[2] = 0
-                elif keyboard.read_key() == "x":
+                elif keyboard.is_pressed("x"):
                     onnxMatrix[2] = 2
-                if keyboard.read_key() == "c":
+                if keyboard.is_pressed("c"):
                     onnxMatrix[5] = 0
-                elif keyboard.read_key() == "v":
+                elif keyboard.is_pressed("v"):
                     onnxMatrix[5] = 2
                     
                 print(onnxMatrix)
-                '''
-                linoffSteps, linmidSteps, lindefSteps, rotoffSteps, rotmidSteps, rotdefSteps = self.oh.runOnnxThrees(self.ballPos, self.rodPos, self.rodRot, heuristic = True, onnxMatrix) #run onnx
+                
+                linoffSteps, linmidSteps, lindefSteps, rotoffSteps, rotmidSteps, rotdefSteps = self.oh.runOnnxThrees(self.ballPos, self.rodPos, self.rodRot, heuristic = True, manufacturedOutput = onnxMatrix) #run onnx
 
                 sendStr = str(linoffSteps) + "," + str(rotoffSteps) + "," + str(linmidSteps) + "," + str(rotmidSteps) + "," + str(lindefSteps) + "," + str(rotdefSteps) + "," + "\n" #format
+                print(sendStr);
                 sendStr = bytes(sendStr, 'utf-8')
                 self.ser.write(sendStr) #send to arduino
-
+                '''
                 if self.totalStepCounter % self.readRotCounterLim == 0: #check if we need to update rotation values
                     if self.ser.in_waiting: #see if serial has stuff in it
                         serLine = int(self.ser.readline().strip('\n')) #format the line
@@ -424,8 +426,12 @@ class AutomatedFoosballTable():
 
                 cv2.imshow("frame", frame)
                 key = cv2.waitKey(1) & 0xFF
-                if key == ord("q"):
+                if key == ord("p"):
                     break
+                    
+                while(time.time() - startTime) < 0.1:
+                    pass
+                print(time.time() - startTime)
         
     def newFrame(self):
         ret, frame = self.cap.read()
@@ -447,9 +453,10 @@ class AutomatedFoosballTable():
         return resized
         
     def correctRodPos(self, frame):
-    	self.rodPos[1] += int((4)/2 / 23 * frame.shape[1]) #inches * pixels / inches
-    	self.rodPos[1] -= frame.shape[1]/2 #center it around 0
-    	self.rodPos[1] = self.rodPos[1] * 23 / frame.shape[1]
+    	for i in range (1, 6, 2):
+    	    self.rodPos[i] += int((4)/2 / 23 * frame.shape[1]) #inches * pixels / inches
+    	    self.rodPos[i] -= frame.shape[1]/2 #center it around 0
+    	    self.rodPos[i] = self.rodPos[1] * 23 / frame.shape[1]
     	
         
 

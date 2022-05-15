@@ -133,7 +133,7 @@ def getBallPos(frame):
         mask = cv2.inRange(blurred, orangeLower, orangeUpper)
         mask = cv2.erode(mask, None, iterations=1)
         mask = cv2.dilate(mask, None, iterations=5)
-        cv2.imshow("masked", mask)
+        #cv2.imshow("masked", mask)
 
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE)
