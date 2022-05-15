@@ -75,8 +75,8 @@ def getRodPoints(frame):
     #pinkLower = (100, 50, 180)
     #pinkUpper = (250, 200, 250)
 
-    pinkLower = (130, 50, 50)
-    pinkUpper = (170, 255, 255)
+    pinkLower = (135, 75, 50)
+    pinkUpper = (165, 255, 255)
 
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     blurred=frame
@@ -101,7 +101,7 @@ def getRodPoints(frame):
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
     counter = 0
     if len(cnts) > 0:
-        while counter < min(len(cnts), 2): #CHANGE THIS NUMBER FROM 2 TO WHATEVER ELSE
+        while counter < min(len(cnts), 6): #CHANGE THIS NUMBER FROM 2 TO WHATEVER ELSE
             c = cnts[counter]
             ((x, y), radius) = cv2.minEnclosingCircle(c)
 
@@ -117,7 +117,7 @@ def getRodPoints(frame):
     return pts, frame
 
 def getBallPos(frame):
-    orangeLower = (10, 30, 100)
+    orangeLower = (10, 0, 100)
     orangeUpper = (40, 255, 255)
 
     while True:
@@ -133,7 +133,7 @@ def getBallPos(frame):
         mask = cv2.inRange(blurred, orangeLower, orangeUpper)
         mask = cv2.erode(mask, None, iterations=1)
         mask = cv2.dilate(mask, None, iterations=5)
-        #cv2.imshow("masked", mask)
+        cv2.imshow("masked", mask)
 
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE)

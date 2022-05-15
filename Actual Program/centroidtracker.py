@@ -33,11 +33,11 @@ class CentroidTracker():
         else:
             objectIds = list(self.objects.keys()) #[1, 2, 3]
             objectCentroids = list(self.objects.values()) #[(11, 12), (21, 22), (31, 32)]
-            print("object centroids:")
-            print(objectCentroids)
+            #print("object centroids:")
+            #print(objectCentroids)
 
-            print("input centroids:")
-            print(inputCentroids)
+            #print("input centroids:")
+            #print(inputCentroids)
 
             D = dist.cdist(np.array(objectCentroids), inputCentroids, 'euclidean')
             #D = [
