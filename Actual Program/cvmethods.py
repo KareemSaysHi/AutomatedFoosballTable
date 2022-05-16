@@ -131,9 +131,9 @@ def getBallPos(frame):
         blurred = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
         mask = cv2.inRange(blurred, orangeLower, orangeUpper)
-        mask = cv2.erode(mask, None, iterations=1)
+        mask = cv2.erode(mask, None, iterations=3)
         mask = cv2.dilate(mask, None, iterations=5)
-        #cv2.imshow("masked", mask)
+        cv2.imshow("masked", mask)
 
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE)
@@ -146,7 +146,7 @@ def getBallPos(frame):
             M = cv2.moments(c)
             center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
-            if radius > 10:
+            if radius > 7:
                 cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
         
         return frame, center

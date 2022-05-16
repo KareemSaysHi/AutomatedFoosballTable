@@ -9,6 +9,36 @@ from centroidtracker import CentroidTracker
 from helperonnx import OnnxHelper
 import serial
 import keyboard
+import cv2, queue, threading, time
+
+# bufferless VideoCapture
+class VideoCapture:
+
+  def __init__(self, name):
+    self.cap = cv2.VideoCapture(name)       
+    self.cap.set(3, 960)
+    self.cap.set(4, 540)
+    self.q = queue.Queue()
+    t = threading.Thread(target=self._reader)
+    t.daemon = True
+    t.start()
+
+  # read frames as soon as they are available, keeping only most recent one
+  def _reader(self):
+    while True:
+      ret, frame = self.cap.read()
+      if not ret:
+        break
+      if not self.q.empty():
+        try:
+          self.q.get_nowait()   # discard previous (unprocessed) frame
+        except Queue.Empty:
+          pass
+      self.q.put(frame)
+
+  def read(self):
+    return True, self.q.get()
+
 
 class AutomatedFoosballTable():
     
@@ -40,10 +70,7 @@ class AutomatedFoosballTable():
         self.totalStepCounter = 0
         self.readRotCounterLim = 100
 
-        self.cap = cv2.VideoCapture(-1)
-            
-        self.cap.set(3, 960)
-        self.cap.set(4, 540)
+        self.cap = VideoCapture(-1);        
 
         #Look for four aruco tags
 

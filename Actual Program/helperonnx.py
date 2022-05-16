@@ -254,12 +254,14 @@ class OnnxHelper():
                 newRodPosArray[players[i]] = self.maxPosition #fix
                 if (self.linearVelocities[i] > 0):
                     self.linearVelocities[i] = 0
-                self.linearInputs[i] = 0
+                    self.linearInputs[i] = 0
+                #else:
+                   #self.linearVelocities[i] = (rodPosArray[players[i]] - self.MaxPosArray[i])/self.fixedDeltaTime
             elif newRodPosArray[players[i]] < -1*self.maxPosArray[i]:
                 newRodPosArray[players[i]] = -1*self.maxPosArray[i]
                 if (self.linearVelocities[i] < 0):
                     self.linearVelocities[i] = 0
-                self.linearInputs[i] = 0
+                    self.linearInputs[i] = 0
                 
         print(self.linearVelocities)
         
